@@ -81,12 +81,12 @@ function initGL() {
 
     // Init boids
     Boids.init();
+    Boids.resize(canvas.width, canvas.height);
 
     // Start
     Promise.all([
         createScreenRenderProgram
     ]).then(() => {
-        Boids.resize(canvas.width, canvas.height)
         running = true;
         window.requestAnimationFrame(main_loop);
     });
@@ -141,7 +141,7 @@ function render(){
 
 let main_loop_start_time;
 let main_loop_prevous_time;
-function main_loop(time){
+window.main_loop = function main_loop(time){
     // Timing
     if(main_loop_start_time === undefined) main_loop_start_time = time;
     const elapsed_time = time - main_loop_start_time;
@@ -155,10 +155,18 @@ function main_loop(time){
 
     const errorCode = gl.getError();
     if(errorCode !== gl.NO_ERROR) return handleError(errorCode);
-    // window.requestAnimationFrame(main_loop);
+    window.requestAnimationFrame(main_loop);
 }
 
+function registerInputHandler(){
+    canvas.addEventListener('mousemove', e => {
+        // Normalize mouse coordinates
+        var mousePos = new Vec2((e.offsetX / canvas.width) - 0.5, 1.0 - (e.offsetY / canvas.height) - 0.5).mul(2);
+        Boids.mousemove(mousePos);
+    });
+}
 
 // Main
 resize_canvas();
 initGL();
+registerInputHandler();

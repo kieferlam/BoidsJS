@@ -1,10 +1,14 @@
 #version 300 es
 
-layout (location=0) in vec4 position;
+layout (location=0) in vec4 vertex;
 
 out vec3 vexcol;
 
-uniform mat4 mvp;
+uniform mat4 projection;
+
+uniform vec3 position;
+
+uniform mat4 transform;
 
 void main(){
 
@@ -12,12 +16,12 @@ void main(){
     if(gl_VertexID == 0){
         vexcol = vec3(1.0, 0.8, 0.0);
     }else if(gl_VertexID == 1){
-        vexcol = vec3(0.5, 0.2, 0.2);
+        vexcol = vec3(0.0, 1.0, 0.8);
     }else if(gl_VertexID == 2){
-        vexcol = vec3(0.1, 0.7, 0.6);
-    }else if(gl_VertexID == 3){
-        vexcol = vec3(0.1, 0.2, 0.6);
+        vexcol = vec3(0.8, 0.0, 1.0);
     }
 
-    gl_Position = mvp * vec4(position.xy, 0.0, 1.0);
+    vec4 translate = vec4(position, 0.0);
+
+    gl_Position = projection * (translate + (transform * vec4(vertex.xy, 0.0, 1.0)));
 }
