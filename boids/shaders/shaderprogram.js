@@ -95,6 +95,16 @@ class ShaderProgram{
         this.use();
         window.gl.uniformMatrix4fv(this.uniformLocation(name), false, mat.data, 0, 0);
     }
+
+    uniformVec(name, vec){
+        const gl = window.gl;
+        var loc = this.uniformLocation(name);
+        const funcs = [()=>console.error("Vector data length is 0"), ()=>gl.uniform1fv(loc, vec.data), ()=>gl.uniform2fv(loc, vec.data), ()=>gl.uniform3fv(loc, vec.data), ()=>gl.uniform4fv(loc, vec.data)];
+
+        this.use();
+        if(vec.data.length > funcs.length) return console.error("Cannot specify uniform values for vectors with more than 4 components.");
+        funcs[vec.data.length]();
+    }
 }
 
 class VertexShader extends Shader{
