@@ -4,18 +4,18 @@ import { Vec2 } from './primitive.js';
 const BYTES_IN_FLOAT = Float32Array.BYTES_PER_ELEMENT;
 
 class VertexBuffer{
-    constructor(data = [], componentSize = 1, usage = window.gl.STATIC_DRAW){
+    constructor(data = [], componentSize = 1, usage = window.gl.STATIC_DRAW, drawingMode = window.gl.TRIANGLES){
         const gl = window.gl;
 
         this.handle = gl.createBuffer();
         this.data = data;
         this.componentSize = componentSize;
+        this.usage = usage;
+        this.drawingMode = drawingMode;
 
         if(data.length > 0){
             this.bufferData();
         }
-
-        this.usage = usage;
     }
 
     numIndices(){
@@ -51,7 +51,7 @@ class VertexBuffer{
     }
 
     draw(first = 0, count = this.numIndices()){
-        window.gl.drawArrays(window.gl.TRIANGLES, first, count);
+        window.gl.drawArrays(this.drawingMode, first, count);
     }
 
     bind(){
@@ -64,8 +64,8 @@ class VertexBuffer{
 }
 
 class TriangleBuffer extends VertexBuffer{
-    constructor(v1, v2, v3){
-        super([], 2);
+    constructor(v1, v2, v3, usage = window.gl.STATIC_DRAW){
+        super([], 2, usage);
 
         this.bind();
 
@@ -118,4 +118,50 @@ class QuadBuffer extends VertexBuffer{
     }
 }
 
-export {VertexBuffer, QuadBuffer, TriangleBuffer};
+class LineBuffer extends VertexBuffer{
+    constructor(data = [], usage = window.gl.STATIC_DRAW){
+        super(data, 2, usage, window.gl.LINES)
+    }
+
+    vecAttributePointer(vao){
+        vao.vecAttribPointer(this, 2, 0, 0, 0);
+    }
+}
+
+class LineStripBuffer extends VertexBuffer{
+    constructor(data = [], usage = window.gl.STATIC_DRAW){
+        super(data, 1, usage, window.gl.LINE_STRIP);
+    }
+}
+
+class TriangleFanBuffer extends VertexBuffer{
+    constructor(data = [], usage = window.gl.STATIC_DRAW){
+        super(data, 2, usage, window.gl.TRIANGLE_FAN);
+    }
+}
+
+class CircleBuffer extends TriangleFanBuffer{
+    constructor(radius, edges, usage = window.gl.STATIC_DRAW){
+        super([], usage);
+
+        var center = new Vec2();
+
+        var numVertices = Math.max(4, edges);
+        var angleStep = (Math.PI * 2) / numVertices;
+
+        this.addVec(center);
+        for(var i = 0, angle = 0; i < numVertices; ++i, angle += angleStep){
+            this.addVec(new Vec2(Math.cos(angle) * radius, Math.sin(angle) * radius));
+        }
+        // Add the first vertex again to complete the circle
+        this.addVec(new Vec2(Math.cos(0) * radius, Math.sin(0) * radius));
+
+        this.bufferData();
+    }
+
+    vecAttributePointer(vao){
+        vao.vecAttribPointer(this, 2, 0, 0, 0);
+    }
+}
+
+export {VertexBuffer, QuadBuffer, TriangleBuffer, LineBuffer, LineStripBuffer, TriangleFanBuffer, CircleBuffer};

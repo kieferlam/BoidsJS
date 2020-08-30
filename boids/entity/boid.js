@@ -1,19 +1,27 @@
 import {Vec2, Vec3, Vec4, VEC2_ZERO} from '../geometry/primitive.js';
 import {Mat4, Mat2, Matrix} from '../geometry/matrix.js';
-import {TriangleBuffer} from '../geometry/databuffer.js';
+import {TriangleBuffer, LineBuffer, VertexBuffer} from '../geometry/databuffer.js';
 import {VertexArrayObject} from '../globject/vao.js';
 
 function _make_triangle(){
-    const baseWidth = 0.5;
-    const height = 0.75;
+    const baseWidth = 0.3;
+    const height = 0.45;
     const v1 = new Vec2(-baseWidth * 0.5, -height * 0.5);
     const v2 = new Vec2(baseWidth * 0.5, -height * 0.5);
     const v3 = new Vec2(0, height * 0.5);
     return new TriangleBuffer(v1, v2, v3);
 }
 
+var created = false;
+
 var vao = null;
 var triangle = null;
+// Instancing
+var matrices = null;
+var positions = null;
+
+var headingVao = null;
+var headingLine = null;
 
 const RotateSpeed = 0.01;
 var RotateAntiClockwise = (strength) => new Mat4(Matrix.MatInit(Mat2.Rotate(-RotateSpeed * strength)));
@@ -30,11 +38,18 @@ class Boid{
         
         const gl = window.gl;
         if(gl){
-            if(!vao || !triangle){
+            if(!created){
                 vao = new VertexArrayObject();
                 triangle = _make_triangle();
 
                 triangle.vecAttributePointer(vao);
+
+                // Heading line
+                headingVao = new VertexArrayObject();
+                headingLine = new LineBuffer([0, 0, 0, 1]);
+                headingLine.vecAttributePointer(headingVao);
+
+                created = true;
             }
         }
     }
@@ -48,24 +63,27 @@ class Boid{
     }
 
     static get VISION_ANGLE(){
-        return 1.5;
+        return 1.75;
     }
 
-    avoid(boid, elapsed_time, delta_time){
-        var onLeft = boid.position.onLeft(this.position, this.heading);
-        var adjustStrength = 1 - boid.position.to(this.position).length;
-        adjustStrength = Math.max(0, adjustStrength);
+    avoid(point, elapsed_time, delta_time){
+        var onLeft = point.onLeft(this.position, this.heading);
+        var adjustStrength = 1 - (point.to(this.position).lengthSq / Boid.VISION_RADIUS);
+        adjustStrength = Math.max(0, adjustStrength) * 3;
         this.heading = Vec4.FromMat(onLeft ? RotateClockwise(adjustStrength).mul(Vec4.From(this.heading)) : RotateAntiClockwise(adjustStrength).mul(Vec4.From(this.heading))).xyz;
     }
 
     steerTowardsFlock(flockVector){
         var onLeft = flockVector.onLeft(VEC2_ZERO, this.heading);
-        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(1.0).mul(Vec4.From(this.heading)) : RotateClockwise(1.0).mul(Vec4.From(this.heading))).xyz;
+        var steerStrength = 2.0;
+        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(steerStrength).mul(Vec4.From(this.heading)) : RotateClockwise(steerStrength).mul(Vec4.From(this.heading))).xyz;
     }
 
     steerTowardsPoint(point){
-        var onLeft = point.onLeft(VEC2_ZERO, this.heading);
-        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(1.0).mul(Vec4.From(this.heading)) : RotateClockwise(1.0).mul(Vec4.From(this.heading))).xyz;
+        var pointVec = this.position.to(point);
+        var onLeft = pointVec.onLeft(VEC2_ZERO, this.heading);
+        var steerStrength = 3.0;
+        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(steerStrength).mul(Vec4.From(this.heading)) : RotateClockwise(steerStrength).mul(Vec4.From(this.heading))).xyz;
     }
 
     update(elapsed_time, delta_time){
@@ -80,6 +98,9 @@ class Boid{
 
         vao.bind();
         triangle.draw();
+
+        headingVao.bind();
+        // headingLine.draw();
     }
 }
 

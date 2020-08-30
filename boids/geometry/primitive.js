@@ -138,14 +138,9 @@ class Vec3 extends Vec2 {
     }
 
     onLeft(point, vector) {
-        var x = this.x;
-        var y = this.y;
-        var x1 = point.x;
-        var y1 = point.y;
-        var x2 = x1 + vector.x;
-        var y2 = x2 + vector.y;
+        var linePoint = point.to(this);
 
-        var d = (x-x1)*(y2-y1)-(y-y1)*(x2-x1);
+        var d = linePoint.x*vector.y-linePoint.y*vector.x;
         return d < 0;
     }
 

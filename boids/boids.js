@@ -1,14 +1,17 @@
-import { TriangleBuffer, QuadBuffer } from './geometry/databuffer.js';
+import { TriangleBuffer, QuadBuffer, CircleBuffer} from './geometry/databuffer.js';
 import { Vec2, Vec3, Vec4} from './geometry/primitive.js';
 import { ShaderProgram, SimpleShaderProgram } from './shaders/shaderprogram.js';
 import { VertexArrayObject } from './globject/vao.js';
-import { Mat4 } from './geometry/matrix.js';
+import { Mat2, Mat4, Matrix, Mat3 } from './geometry/matrix.js';
 import * as Utils from './util.js';
 import {Boid} from './entity/boid.js';
+
+const NUM_BOIDS = 100;
 
 let shaderProgram;
 
 let ortho;
+let orthoInverse;
 
 var initComplete = false;
 
@@ -41,8 +44,8 @@ var boidCluster = {
             if(p.x < -2.1) this.boids[i].position.x = 2.0;
 
             // Flock
-            var flockDirection = this.boids[i].heading.copy();
-            var flockCenter = this.boids[i].position.copy();
+            var flockDirection = new Vec3();
+            var flockCenter = new Vec3();
             var numBoidsInFlock = 0;
 
             // Check surrounding boids
@@ -55,7 +58,7 @@ var boidCluster = {
                 // Check if other boid is within radius and vision
                 if(distSq < Boid.VISION_RADIUS && dot > 1 - Boid.VISION_ANGLE){
                     // Rule 1: avoid other boids in the flock
-                    this.boids[i].avoid(this.boids[j], elapsed_time, delta_time);
+                    this.boids[i].avoid(this.boids[j].position, elapsed_time, delta_time);
 
                     // Add to flock direction vector
                     flockDirection = flockDirection.add(this.boids[j].heading);
@@ -74,6 +77,11 @@ var boidCluster = {
 
             // Rule 3: Steer towards the center of the flock
             this.boids[i].steerTowardsPoint(flockDirection.mul(1 / numBoidsInFlock));
+
+            // Steer towards cursor
+            // this.boids[i].steerTowardsPoint(mouseWorld);
+
+
         }
     },
 
@@ -87,13 +95,12 @@ var boidCluster = {
 function init() {
     
     // Create boids
-    for(var i = 0; i < 100; ++i){
+    for(var i = 0; i < NUM_BOIDS; ++i){
         boidCluster.spawn();
     }
 
-    window.boids = boidCluster.boids;
-
     ortho = new Mat4();
+    orthoInverse = new Mat4();
 
     // Load shaders
     Promise.all(loadBoidShaders).then(src => {
@@ -130,6 +137,7 @@ function resize(width, height) {
     ortho.set(1, 3, tpb);
     ortho.set(2, 2, -2 / fmn);
     ortho.set(2, 3, fpn);
+    orthoInverse = ortho.inverse();
 
     const sendMat = () => shaderProgram.uniformMat4("projection", ortho);
 
@@ -137,7 +145,7 @@ function resize(width, height) {
         Utils.asyncCheck(() => {
             if (shaderProgram !== undefined && shaderProgram !== null) return Utils.ASYNC_CHECK_RESOLVE;
             return Utils.ASYNC_CHECK_RETRY;
-        }, 10, 10).then(() => sendMat());
+        }, 100, 10).then(() => sendMat());
     } else {
         sendMat();
     }
@@ -151,8 +159,7 @@ function update(elapsed_time, delta_time) {
 
 function mousemove(mpos){
     mouse.set(mpos.x, mpos.y);
-    mouseWorld = Vec4.FromMat(ortho.mul(Vec4.From(mouse))).xyz;
-    console.log(`${mouseWorld.x} : ${mouseWorld.y}`);
+    mouseWorld = Vec4.FromMat(orthoInverse.mul(Vec4.From(mouse))).xyz;
 }
 
 function render() {
