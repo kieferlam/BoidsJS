@@ -80,8 +80,8 @@ function initGL() {
     createMainFramebuffer();
 
     // Init boids
-    Boids.init();
     Boids.resize(canvas.width, canvas.height);
+    Boids.init();
 
     // Start
     Promise.all([
@@ -141,7 +141,7 @@ function render(){
 
 let main_loop_start_time;
 let main_loop_prevous_time;
-window.main_loop = function main_loop(time){
+function main_loop(time){
     // Timing
     if(main_loop_start_time === undefined) main_loop_start_time = time;
     const elapsed_time = time - main_loop_start_time;

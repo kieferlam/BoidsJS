@@ -82,7 +82,7 @@ class Matrix {
     }
 
     mul(mat) {
-        if (this.columns != mat.rows) return console.error(`Matrices inner size must match for matrix multiplication (left: ${this.columns}, right: ${mat.rows})`);
+        if (this.columns != mat.rows) throw new Error(`Matrices inner size must match for matrix multiplication (left: ${this.columns}, right: ${mat.rows})`);
         var result = new Matrix(this.rows, mat.columns);
         for (var r = 0; r < result.rows; ++r) {
             for (var c = 0; c < result.columns; ++c) {
@@ -177,6 +177,12 @@ class Matrix {
 
     copy() {
         return new Matrix(this.rows, this.columns, Matrix.MatCopy(this));
+    }
+
+    assign(mat){
+        if(this.rows !== mat.rows || this.columns !== mat.columns) throw new Error(`Assigning matrices must match in size.`);
+
+        this.transform((row, col) => mat.get(row, col));
     }
 }
 

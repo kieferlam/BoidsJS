@@ -3,9 +3,8 @@ import { Vec2 } from './primitive.js';
 
 const BYTES_IN_FLOAT = Float32Array.BYTES_PER_ELEMENT;
 
-class VertexBuffer{
-    constructor(data = [], componentSize = 1, usage = window.gl.STATIC_DRAW, drawingMode = window.gl.TRIANGLES){
-        const gl = window.gl;
+class VertexBuffer {
+    constructor(data = [], componentSize = 1, usage = gl.STATIC_DRAW, drawingMode = gl.TRIANGLES) {
 
         this.handle = gl.createBuffer();
         this.data = data;
@@ -13,58 +12,73 @@ class VertexBuffer{
         this.usage = usage;
         this.drawingMode = drawingMode;
 
-        if(data.length > 0){
+        if (data.length > 0) {
             this.bufferData();
         }
     }
 
-    numIndices(){
+    get numIndices() {
         return this.data.length / this.componentSize;
     }
 
-    asFloat32Array(){
-        return new Float32Array(this.data);
+    asFloat32Array() {
+        return Float32Array.from(this.data);
     }
 
-    add(v){
+    add(v) {
         this.data.push(v);
     }
 
-    addVec(vec){
+    concat(v) {
+        if (v.constructor.name === Float32Array.name) {
+            this.data = this.data.concat(Array.prototype.slice.call(v));
+        } else {
+            this.data = this.data.concat(v);
+        }
+    }
+
+    addVec(vec) {
         vec.data.forEach((val) => this.add(val));
     }
 
-    remove(i, count = 1){
+    remove(i, count = 1) {
         this.data = this.data.splice(i, count);
     }
 
-    bufferData(){
+    bufferData() {
         this.bind();
-        window.gl.bufferData(window.gl.ARRAY_BUFFER, this.asFloat32Array(), this.usage);
-        window.gl.bindBuffer(window.gl.ARRAY_BUFFER, null);
+        gl.bufferData(gl.ARRAY_BUFFER, this.asFloat32Array(), this.usage);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
-    
-    bufferSubData(length = this.data.length, offset = 0){
+
+    bufferSubData(length = this.data.length, offset = 0) {
         this.bind();
-        window.gl.bufferSubData(window.gl.ARRAY_BUFFER, offset, this.asFloat32Array(), offset, length);
-        window.gl.bindBuffer(window.gl.ARRAY_BUFFER, null);
+        gl.bufferSubData(gl.ARRAY_BUFFER, offset, this.asFloat32Array(), offset, length);
+        gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
-    draw(first = 0, count = this.numIndices()){
-        window.gl.drawArrays(this.drawingMode, first, count);
+    subData(data, index){
+        var startIndex = index * this.componentSize;
+        for(var absi = startIndex, i = 0; absi < startIndex + data.length; ++i, ++absi){
+            this.data[absi] = data[i];
+        }
     }
 
-    bind(){
-        window.gl.bindBuffer(window.gl.ARRAY_BUFFER, this.handle);
+    draw(first = 0, count = this.numIndices) {
+        gl.drawArrays(this.drawingMode, first, count);
     }
 
-    delete(){
-        window.gl.deleteBuffer(this.handle);
+    bind() {
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.handle);
+    }
+
+    delete() {
+        gl.deleteBuffer(this.handle);
     }
 }
 
-class TriangleBuffer extends VertexBuffer{
-    constructor(v1, v2, v3, usage = window.gl.STATIC_DRAW){
+class TriangleBuffer extends VertexBuffer {
+    constructor(v1, v2, v3, usage = gl.STATIC_DRAW) {
         super([], 2, usage);
 
         this.bind();
@@ -76,13 +90,13 @@ class TriangleBuffer extends VertexBuffer{
         this.bufferData();
     }
 
-    vecAttributePointer(vao){
+    vecAttributePointer(vao) {
         vao.vecAttribPointer(this, 2, 0, 0, 0);
     }
 }
 
-class QuadBuffer extends VertexBuffer{
-    constructor(v1, v2, v3, v4){
+class QuadBuffer extends VertexBuffer {
+    constructor(v1, v2, v3, v4) {
         super([], 4);
 
         this.bind();
@@ -112,36 +126,36 @@ class QuadBuffer extends VertexBuffer{
         this.bufferData();
     }
 
-    vecAttributePointer(vao){
+    vecAttributePointer(vao) {
         vao.vecAttribPointer(this, 2, 0, this.componentSize * BYTES_IN_FLOAT, 0);
         vao.vecAttribPointer(this, 2, 1, this.componentSize * BYTES_IN_FLOAT, 2 * BYTES_IN_FLOAT);
     }
 }
 
-class LineBuffer extends VertexBuffer{
-    constructor(data = [], usage = window.gl.STATIC_DRAW){
-        super(data, 2, usage, window.gl.LINES)
+class LineBuffer extends VertexBuffer {
+    constructor(data = [], usage = window.gl.STATIC_DRAW) {
+        super(data, 2, usage, gl.LINES)
     }
 
-    vecAttributePointer(vao){
+    vecAttributePointer(vao) {
         vao.vecAttribPointer(this, 2, 0, 0, 0);
     }
 }
 
-class LineStripBuffer extends VertexBuffer{
-    constructor(data = [], usage = window.gl.STATIC_DRAW){
-        super(data, 1, usage, window.gl.LINE_STRIP);
+class LineStripBuffer extends VertexBuffer {
+    constructor(data = [], usage = gl.STATIC_DRAW) {
+        super(data, 1, usage, gl.LINE_STRIP);
     }
 }
 
-class TriangleFanBuffer extends VertexBuffer{
-    constructor(data = [], usage = window.gl.STATIC_DRAW){
-        super(data, 2, usage, window.gl.TRIANGLE_FAN);
+class TriangleFanBuffer extends VertexBuffer {
+    constructor(data = [], usage = gl.STATIC_DRAW) {
+        super(data, 2, usage, gl.TRIANGLE_FAN);
     }
 }
 
-class CircleBuffer extends TriangleFanBuffer{
-    constructor(radius, edges, usage = window.gl.STATIC_DRAW){
+class CircleBuffer extends TriangleFanBuffer {
+    constructor(radius, edges, usage = gl.STATIC_DRAW) {
         super([], usage);
 
         var center = new Vec2();
@@ -150,7 +164,7 @@ class CircleBuffer extends TriangleFanBuffer{
         var angleStep = (Math.PI * 2) / numVertices;
 
         this.addVec(center);
-        for(var i = 0, angle = 0; i < numVertices; ++i, angle += angleStep){
+        for (var i = 0, angle = 0; i < numVertices; ++i, angle += angleStep) {
             this.addVec(new Vec2(Math.cos(angle) * radius, Math.sin(angle) * radius));
         }
         // Add the first vertex again to complete the circle
@@ -159,9 +173,9 @@ class CircleBuffer extends TriangleFanBuffer{
         this.bufferData();
     }
 
-    vecAttributePointer(vao){
+    vecAttributePointer(vao) {
         vao.vecAttribPointer(this, 2, 0, 0, 0);
     }
 }
 
-export {VertexBuffer, QuadBuffer, TriangleBuffer, LineBuffer, LineStripBuffer, TriangleFanBuffer, CircleBuffer};
+export { VertexBuffer, QuadBuffer, TriangleBuffer, LineBuffer, LineStripBuffer, TriangleFanBuffer, CircleBuffer };

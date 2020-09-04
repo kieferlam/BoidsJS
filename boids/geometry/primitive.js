@@ -7,6 +7,10 @@ class Vec extends Matrix {
         super(length, 1);
     }
 
+    assign(vec){
+        if(vec.data.length !== this.data.length) throw new Error(`Vector assignment must have equal sizes.`);
+    }
+
     get(i) {
         return this.data[i];
     }
@@ -73,7 +77,7 @@ class Vec extends Matrix {
         return copy;
     }
 
-    get componentSize() {
+    static get componentSize() {
         return 1;
     }
 }
@@ -109,7 +113,7 @@ class Vec2 extends Vec {
         return new Vec2(this.x, this.y);
     }
 
-    get componentSize() {
+    static get componentSize() {
         return 2;
     }
 
@@ -148,7 +152,7 @@ class Vec3 extends Vec2 {
         return new Vec3(this.x, this.y, this.z);
     }
 
-    get componentSize() {
+    static get componentSize() {
         return 3;
     }
 }
@@ -192,7 +196,7 @@ class Vec4 extends Vec3 {
         return new Vec4(this.x, this.y, this.z, this.w);
     }
 
-    get componentSize() {
+    static get componentSize() {
         return 4;
     }
 }
