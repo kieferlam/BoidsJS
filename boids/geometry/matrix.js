@@ -238,6 +238,10 @@ class Mat3 extends Matrix {
         super(Mat3.Rows, Mat3.Columns, initializer);
     }
 
+    static get IDENTITY(){
+        return IDENTITYm3;
+    }
+
     static get Rows() { return 3; }
     static get Columns() { return 3; }
 
@@ -252,10 +256,15 @@ class Mat3 extends Matrix {
         return new Mat3(Matrix.MatCopy(this));
     }
 }
+const IDENTITYm3 = Object.freeze(new Mat3());
 
 class Mat4 extends Matrix {
     constructor(initializer = identity) {
         super(Mat4.Rows, Mat4.Columns, initializer);
+    }
+
+    static get IDENTITY(){
+        return IDENTITYm4;
     }
 
     static get Rows() { return 4; }
@@ -265,5 +274,6 @@ class Mat4 extends Matrix {
         return new Mat4(Matrix.MatCopy(this));
     }
 }
+const IDENTITYm4 = Object.freeze(new Mat4());
 
 export { Matrix, Mat2, Mat3, Mat4 };

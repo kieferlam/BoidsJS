@@ -89,6 +89,10 @@ class Vec2 extends Vec {
         this.data[1] = y;
     }
 
+    static get ZERO(){
+        return ZEROv2;
+    }
+
     get x() {
         return this.get(0);
     }
@@ -105,6 +109,17 @@ class Vec2 extends Vec {
         this.data[1] = val;
     }
 
+    onLeft(point, vector) {
+        var linePoint = point.to(this);
+
+        var d = linePoint.cross(vector);
+        return d < 0;
+    }
+
+    cross(v){
+        return this.x * v.y - this.y * v.x;
+    }
+
     angle() {
         return Math.atan2(this.y, this.x);
     }
@@ -118,11 +133,16 @@ class Vec2 extends Vec {
     }
 
 }
+const ZEROv2 = Object.freeze(new Vec2(0, 0));
 
 class Vec3 extends Vec2 {
     constructor(x = 0, y = 0, z = 0, numComponents = 3) {
         super(x, y, numComponents);
         this.data[2] = z;
+    }
+
+    static get ZERO(){
+        return ZEROv3;
     }
 
     get z() {
@@ -156,11 +176,16 @@ class Vec3 extends Vec2 {
         return 3;
     }
 }
+const ZEROv3 = Object.freeze(new Vec3(0, 0, 0));
 
 class Vec4 extends Vec3 {
     constructor(x = 0, y = 0, z = 0, w = 0, numComponents = 4) {
         super(x, y, z, numComponents);
         this.data[3] = w;
+    }
+
+    static get ZERO(){
+        return ZEROv4;
     }
 
     get w() {
@@ -171,6 +196,9 @@ class Vec4 extends Vec3 {
         this.data[3] = val;
     }
 
+    get xy(){
+        return new Vec2(this.x, this.y);
+    }
     get xyz() {
         return new Vec3(this.x, this.y, this.z);
     }
@@ -200,7 +228,6 @@ class Vec4 extends Vec3 {
         return 4;
     }
 }
+const ZEROv4 = Object.freeze(new Vec4(0, 0, 0, 0));
 
-const VEC2_ZERO = new Vec2(0, 0);
-
-export { Vec, Vec2, Vec3, Vec4, VEC2_ZERO };
+export { Vec, Vec2, Vec3, Vec4 };

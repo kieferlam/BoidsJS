@@ -6,7 +6,7 @@ import {VertexArrayObject} from './globject/vao.js';
 import * as Boids from './boids.js';
 
 const canvas = document.getElementById('render-canvas');
-const gl = canvas.getContext("webgl2");
+window.gl = canvas.getContext("webgl2");
 
 const pError = document.getElementById("error");
 
@@ -58,8 +58,6 @@ function initGL() {
     if (gl === null) {
         window.error("Unable to initialize WebGL. Your browser or machine may not support it.");
     }
-    // Set global gl context
-    window.gl = gl;
 
     // Viewport
     calcViewport();

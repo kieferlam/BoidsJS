@@ -41,6 +41,9 @@ class Grid {
     }
 
     iterate(row, col, func){
+        if(row < 0 || col < 0) return;
+        if(!this.cells[row]) console.log(row);
+        if(!this.cells[row][col]) console.log(col);
         this.cells[row][col].forEach(obj => func(obj, row, col));
     }
 
@@ -68,6 +71,7 @@ class Grid {
             // Iterate through objects in cell
             cell.forEach(obj => {
                 var [r, c] = this.getIndex(obj);
+                if(r < 0 || r < 0) return;
                 if(r !== rowIndex && c !== columnIndex){
                     moveCellTransactions.push({
                         obj: obj,

@@ -1,35 +1,36 @@
 
 class Shader{
     constructor(shaderType){
-        const gl = window.gl;
 
         this.handle = gl.createShader(shaderType);
     }
 
     setSource(source){
-        window.gl.shaderSource(this.handle, source);
+        gl.shaderSource(this.handle, source);
     }
 
     compile(){
-        window.gl.compileShader(this.handle);
+        gl.compileShader(this.handle);
     }
 
     successful(){
-        return window.gl.getShaderParameter(this.handle, window.gl.COMPILE_STATUS);
+        return gl.getShaderParameter(this.handle, gl.COMPILE_STATUS);
     }
 
     log(){
-        return window.gl.getShaderInfoLog(this.handle);
+        return gl.getShaderInfoLog(this.handle);
     }
 
     delete(){
-        window.gl.deleteShader(this.handle);
+        gl.deleteShader(this.handle);
     }
 }
 
+let AllShaderPrograms = [];
+let SharedUBO = null;
 class ShaderProgram{
     constructor(){
-        const gl = window.gl;
+        AllShaderPrograms.push(this);
 
         this.handle = gl.createProgram();
 
@@ -38,14 +39,23 @@ class ShaderProgram{
         this.uniforms = {};
     }
 
+    static SetSharedUniformBufferObject(ubo){
+        this.SharedUBO = ubo;
+        AllShaderPrograms.forEach(program => program.uniformBlockBinding("GlobalShared", ubo.index));
+    }
+
     attachShader(shader){
-        window.gl.attachShader(this.handle, shader.handle);
+        gl.attachShader(this.handle, shader.handle);
         this.shaders.push(shader);
     }
 
     link(){
-        window.gl.linkProgram(this.handle);
+        gl.linkProgram(this.handle);
         this.loadUniforms();
+
+        if(SharedUBO){
+            this.uniformBlockBinding("GlobalShared", SharedUBO.index);
+        }
     }
 
     cleanup(){
@@ -53,11 +63,10 @@ class ShaderProgram{
     }
 
     successful(){
-        return window.gl.getProgramParameter(this.handle, window.gl.LINK_STATUS);
+        return gl.getProgramParameter(this.handle, gl.LINK_STATUS);
     }
 
     loadUniforms(){
-        const gl = window.gl;
         const numUniforms = gl.getProgramParameter(this.handle, gl.ACTIVE_UNIFORMS);
 
         for(var i = 0; i < numUniforms; ++i){
@@ -70,15 +79,15 @@ class ShaderProgram{
     }
 
     use(){
-        window.gl.useProgram(this.handle);
+        gl.useProgram(this.handle);
     }
 
     log(){
-        return window.gl.getProgramInfoLog(this.handle);
+        return gl.getProgramInfoLog(this.handle);
     }
 
     delete(){
-        return window.gl.deleteProgram(this.handle);
+        return gl.deleteProgram(this.handle);
     }
 
     // Uniforms
@@ -86,18 +95,21 @@ class ShaderProgram{
         return this.uniforms[name];
     }
 
+    uniformBlockIndex(name){
+        return gl.GetUniformBlockIndex(this.handle, name);
+    }
+
     uniform1i(name, value){
         this.use();
-        window.gl.uniform1i(this.uniformLocation(name), value);
+        gl.uniform1i(this.uniformLocation(name), value);
     }
 
     uniformMat4(name, mat){
         this.use();
-        window.gl.uniformMatrix4fv(this.uniformLocation(name), false, mat.data, 0, 0);
+        gl.uniformMatrix4fv(this.uniformLocation(name), false, mat.data, 0, 0);
     }
 
     uniformVec(name, vec){
-        const gl = window.gl;
         var loc = this.uniformLocation(name);
         const funcs = [()=>console.error("Vector data length is 0"), ()=>gl.uniform1fv(loc, vec.data), ()=>gl.uniform2fv(loc, vec.data), ()=>gl.uniform3fv(loc, vec.data), ()=>gl.uniform4fv(loc, vec.data)];
 
@@ -105,17 +117,21 @@ class ShaderProgram{
         if(vec.data.length > funcs.length) return console.error("Cannot specify uniform values for vectors with more than 4 components.");
         funcs[vec.data.length]();
     }
+
+    uniformBlockBinding(name, index){
+        gl.uniformBlockBinding(this.handle, this.uniformBlockIndex(name), index);
+    }
 }
 
 class VertexShader extends Shader{
     constructor(){
-        super(window.gl.VERTEX_SHADER);
+        super(gl.VERTEX_SHADER);
     }
 }
 
 class FragmentShader extends Shader{
     constructor(){
-        super(window.gl.FRAGMENT_SHADER);
+        super(gl.FRAGMENT_SHADER);
     }
 }
 

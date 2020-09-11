@@ -6,8 +6,6 @@ import { SimpleShaderProgram } from '../shaders/shaderprogram.js';
 import { VertexArrayObject } from '../globject/vao.js';
 import { VertexBuffer } from '../geometry/databuffer.js';
 
-const EPSILON = 0.0001;
-
 let vao = null;
 let triangle = null;
 
@@ -22,8 +20,8 @@ const loadBoidShaders = [
     fetch('/boids/shaders/boid.frag').then(res => res.text())
 ];
 
-var shaderProgram;
-var shadersLoaded = false;
+let shaderProgram;
+let shadersLoaded = false;
 
 // Load shaders
 const asyncCheckGL = () => !window.gl ? Util.ASYNC_CHECK_RETRY : Util.ASYNC_CHECK_RESOLVE;
@@ -37,8 +35,6 @@ Util.onceGL(() => Promise.all(loadBoidShaders).then(src => {
     shadersLoaded = true;
 }));
 
-var ortho;
-
 const boidIndexPredicate = function(boid, cellwidth, cellheight){
     return [
         (boid.position.y / cellheight) + 10,
@@ -47,17 +43,10 @@ const boidIndexPredicate = function(boid, cellwidth, cellheight){
 }
 
 class BoidGroup {
-    constructor(boundary = {
-        left: -aspect,
-        right: aspect,
-        bottom: -1.0,
-        top: 1.0
-    }) {
+    constructor() {
         this.boids = [];
         this.transforms = [];
         this.positions = [];
-
-        this.boundary = boundary;
 
         this.transformBuffer = null;
         this.positionBuffer = null;
@@ -69,7 +58,7 @@ class BoidGroup {
 
             vao.bind();
 
-            this.transformBuffer = new VertexBuffer([], 16, window.gl.DYNAMIC_DRAW);
+            this.transformBuffer = new VertexBuffer([], 16, gl.DYNAMIC_DRAW);
             this.transformBuffer.bind();
             gl.enableVertexAttribArray(1);
             gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 16 * Util.FLOAT_BYTES, 0);
@@ -85,24 +74,17 @@ class BoidGroup {
             gl.vertexAttribDivisor(3, 1);
             gl.vertexAttribDivisor(4, 1);
 
-            this.positionBuffer = new VertexBuffer([], Vec3.componentSize, window.gl.DYNAMIC_DRAW);
+            this.positionBuffer = new VertexBuffer([], Vec2.componentSize, gl.DYNAMIC_DRAW);
             this.positionBuffer.bind();
             gl.enableVertexAttribArray(5);
-            gl.vertexAttribPointer(5, Vec3.componentSize, gl.FLOAT, false, Vec3.componentSize * Util.FLOAT_BYTES, 0);
+            gl.vertexAttribPointer(5, Vec2.componentSize, gl.FLOAT, false, Vec2.componentSize * Util.FLOAT_BYTES, 0);
 
             gl.vertexAttribDivisor(5, 1);
-
         });
     }
 
     get count() {
         return this.boids.length;
-    }
-
-    static SetOrtho(o) {
-        ortho = o;
-        if (shadersLoaded) shaderProgram.uniformMat4("projection", ortho);
-        else Util.asyncCheck(asyncCheckShaders, -1).then(() => shaderProgram.uniformMat4("projection", ortho));
     }
 
     spawn(position = new Vec2((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1)) {
@@ -139,13 +121,6 @@ class BoidGroup {
     _updateBoid(boid, i, elapsed_time, delta_time){
         boid.update(elapsed_time, delta_time);
 
-        // Loop around screen
-        var p = boid.position;
-        if (p.y > this.boundary.top + EPSILON) boid.position.y = this.boundary.bottom;
-        if (p.y < this.boundary.bottom - EPSILON) boid.position.y = this.boundary.top;
-        if (p.x > this.boundary.right + EPSILON) boid.position.x = this.boundary.left;
-        if (p.x < this.boundary.left - EPSILON) boid.position.x = this.boundary.right;
-
         // Flock
         this.flockDirection = boid.heading;
         this.flockCenter = boid.position;
@@ -155,12 +130,6 @@ class BoidGroup {
         this.grid.iterateNearby(boid, (other, row, col) => {
             this._interactBoids(boid, other, elapsed_time, delta_time);
         });
-
-        // Loop through every other boid
-        // for (var j = 0; j < this.count; ++j) {
-        //     if (i == j) continue;
-        //     this._interactBoids(boid, this.boids[j], elapsed_time, delta_time);
-        // }
 
         this.flockDirection.normalize();
 
@@ -192,6 +161,12 @@ class BoidGroup {
         }
     }
 
+    interact(world, elapsed_time, delta_time){
+        for(var i = 0; i < this.count; ++i){
+            this.boids[i].interact(world, elapsed_time, delta_time);
+        }
+    }
+
     render() {
         if (!shadersLoaded) return;
 
@@ -199,6 +174,8 @@ class BoidGroup {
 
         vao.bind();
         gl.drawArraysInstanced(gl.TRIANGLES, 0, triangle.numIndices, this.count);
+
+        this.boids.forEach(b => b.renderHeadingLine());
     }
 }
 

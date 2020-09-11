@@ -1,9 +1,10 @@
-import {Vec2, Vec3, Vec4, VEC2_ZERO} from '../geometry/primitive.js';
+import {Vec2, Vec3, Vec4} from '../geometry/primitive.js';
 import {Mat4, Mat2, Matrix} from '../geometry/matrix.js';
 import {TriangleBuffer, LineBuffer, VertexBuffer} from '../geometry/databuffer.js';
 import {VertexArrayObject} from '../globject/vao.js';
 import * as Util from '../util.js';
 import {SimpleShaderProgram} from '../shaders/shaderprogram.js';
+import { Ray } from '../geometry/ray.js';
 
 function _make_triangle(){
     const baseWidth = 0.3;
@@ -49,16 +50,14 @@ Util.asyncCheck(asyncCheckGL, -1, 1).then(() => Promise.all(loadBoidShaders).the
 var ortho;
 
 class Boid{
-    constructor(x = 0, y = 0){
+    constructor(x = 0, y = 0, heading = new Vec2(Math.random() - 0.5, Math.random() - 0.5).normal()){
         this._uid = Util.genID();
-        this.position = new Vec3(x, y);
-        this.heading = new Vec3(Math.random() - 0.5, Math.random() - 0.5).normal();
+        this.frontRay = new Ray(new Vec2(x, y), heading, 1.0);
 
         this.transform = new Mat4();
         this.transform.init(Matrix.MatInit(Mat2.Scale(0.1)));
         this.transform = new Mat4(Matrix.MatInit(Mat2.Rotate(this.heading.angle() - Math.PI * 0.5))).mul(this.transform);
         
-        const gl = window.gl;
         if(gl){
             if(!created){
                 vao = new VertexArrayObject();
@@ -87,39 +86,80 @@ class Boid{
     }
 
     static get VISION_RADIUS(){
-        return 0.3 * 0.3;
+        return 0.4 * 0.4;
     }
 
     static get VISION_ANGLE(){
         return 1.75;
     }
 
+    get position(){
+        return this.frontRay.origin;
+    }
+    set position(v){
+        this.frontRay.origin = v;
+    }
+
+    get heading(){
+        return this.frontRay.direction;
+    }
+    set heading(v){
+        this.frontRay.direction = v;
+    }
+
+    steerClockwise(strength){
+        this.heading = Vec4.FromMat(RotateClockwise(strength).mul(Vec4.From(this.heading))).xy;
+    }
+
+    steerAntiClockwise(strength){
+        this.heading = Vec4.FromMat(RotateAntiClockwise(strength).mul(Vec4.From(this.heading))).xy;
+    }
+
     avoid(point, elapsed_time, delta_time){
         var onLeft = point.onLeft(this.position, this.heading);
         var adjustStrength = 1 - (point.to(this.position).lengthSq / Boid.VISION_RADIUS);
-        adjustStrength = Math.max(0, adjustStrength) * 3;
-        this.heading = Vec4.FromMat(onLeft ? RotateClockwise(adjustStrength).mul(Vec4.From(this.heading)) : RotateAntiClockwise(adjustStrength).mul(Vec4.From(this.heading))).xyz;
+        adjustStrength = Math.max(0, adjustStrength) * 2;
+        if(onLeft) this.steerClockwise(adjustStrength);
+        else this.steerAntiClockwise(adjustStrength);
     }
 
     steerTowardsFlock(flockVector){
         if(this.heading.dot(flockVector) > 0.99) return;
-        var onLeft = flockVector.onLeft(VEC2_ZERO, this.heading);
-        var steerStrength = 1.75;
-        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(steerStrength).mul(Vec4.From(this.heading)) : RotateClockwise(steerStrength).mul(Vec4.From(this.heading))).xyz;
+        var onLeft = flockVector.onLeft(Vec2.ZERO, this.heading);
+        var steerStrength = 1.0;
+        if(onLeft) this.steerAntiClockwise(steerStrength);
+        else this.steerClockwise(steerStrength);
     }
 
     steerTowardsPoint(point){
         var pointVec = this.position.to(point);
         if(pointVec.lengthSq < (0.00001)) return;
-        var onLeft = pointVec.onLeft(VEC2_ZERO, this.heading);
-        var steerStrength = 1.5;
-        this.heading = Vec4.FromMat(onLeft ? RotateAntiClockwise(steerStrength).mul(Vec4.From(this.heading)) : RotateClockwise(steerStrength).mul(Vec4.From(this.heading))).xyz;
+        var onLeft = pointVec.onLeft(Vec2.ZERO, this.heading);
+        var steerStrength = 1.0;
+        if(onLeft) this.steerAntiClockwise(steerStrength);
+        else this.steerClockwise(steerStrength);
     }
 
     update(elapsed_time, delta_time){
         this.position = this.position.add(this.heading.mul(delta_time * Boid.SPEED));
         this.transform.init(Matrix.MatInit(Mat2.Scale(0.1)));
         this.transform = new Mat4(Matrix.MatInit(Mat2.Rotate(this.heading.angle() - Math.PI * 0.5))).mul(this.transform);
+    }
+
+    interact(world, elapsed_time, delta_time){
+        // Loop around screen
+        var p = this.position;
+        if (p.y > world.positiveBoundary.y + EPSILON) this.position.y = world.negativeBoundary.y;
+        if (p.y < world.negativeBoundary.y - EPSILON) this.position.y = world.positiveBoundary.y;
+        if (p.x > world.positiveBoundary.x + EPSILON) this.position.x = world.negativeBoundary.x;
+        if (p.x < world.negativeBoundary.x - EPSILON) this.position.x = world.positiveBoundary.x;
+
+        world.iterate((obj)=>{
+            if(obj.rayHit(this.frontRay)){
+                console.log("test");
+                this.steerClockwise(1.0);
+            }
+        });
     }
 
     render(){
@@ -131,9 +171,17 @@ class Boid{
 
         vao.bind();
         triangle.draw();
+    }
+
+    renderHeadingLine(){
+        if(!shadersLoaded) return;
+
+        shaderProgram.use();
+        shaderProgram.uniformVec("position", this.position);
+        shaderProgram.uniformMat4("transform", new Mat4(Matrix.MatInit(Mat2.Rotate(this.heading.angle() - Math.PI * 0.5))));
 
         headingVao.bind();
-        // headingLine.draw();
+        headingLine.draw();
     }
 
     equals(other){

@@ -37,8 +37,8 @@ class VertexBuffer {
         }
     }
 
-    addVec(vec) {
-        vec.data.forEach((val) => this.add(val));
+    addVec(...vecs) {
+        vecs.forEach(v => v.data.forEach((val) => this.add(val)));
     }
 
     remove(i, count = 1) {
