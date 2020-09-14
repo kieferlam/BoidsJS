@@ -128,6 +128,14 @@ class Vec2 extends Vec {
         return new Vec2(this.x, this.y);
     }
 
+    static FromMat(srcmat) {
+        var vec = new Vec2();
+        for (var i = 0; i < Math.min(vec.data.length, srcmat.rows); ++i) {
+            vec.data[i] = srcmat.get(i, 0);
+        }
+        return vec;
+    }
+
     static get componentSize() {
         return 2;
     }

@@ -7,16 +7,16 @@ import * as Utils from './util.js';
 import { Boid } from './entity/boid.js';
 import { BoidGroup } from './entity/boidgroup.js';
 import { UniformBufferObject } from './shaders/shaderbuffers.js';
-import { World, WorldWall } from './world/world.js';
+import { World, WorldBox, WorldWall } from './world/world.js';
 
-const NUM_BOIDS = 1;
+const NUM_BOIDS = 100;
 
 let ortho = new Mat4();
 let orthoInverse = new Mat4();
 let sharedUniforms = null;
 
 window.mouse = new Vec2();
-window.mouseWorld = new Vec3();
+window.mouseWorld = new Vec2();
 
 var boidGroup;
 
@@ -37,15 +37,20 @@ function init() {
         }
     });
 
+    window.genericLineVAO = new VertexArrayObject();
+    window.genericLineBuffer = new LineBuffer([], gl.DYNAMIC_DRAW);
+    genericLineBuffer.vecAttributePointer(genericLineVAO);
+
     world = new World(new Vec2(-aspect, -1.0), new Vec2(aspect, 1.0));
-    world.add(new WorldWall(new Vec2(-0.5, 0.3), new Vec2(0.8, 0.8)))
+    world.add(new WorldBox(new Vec2(0, 0), 0.5, 0.5));
+    // world.add(new WorldWall(new Vec2(-0.5, 0.3), new Vec2(0.8, 0.3)))
 
     boidGroup = new BoidGroup();
     window.boids = boidGroup;
 
     // Create boids
     for (var i = 0; i < NUM_BOIDS; ++i) {
-        boidGroup.spawn(new Vec2(0, 0));
+        boidGroup.spawn();
     }
 }
 
@@ -91,7 +96,7 @@ function update(elapsed_time, delta_time) {
 
 function mousemove(mpos) {
     mouse.set(mpos.x, mpos.y);
-    mouseWorld = Vec4.FromMat(orthoInverse.mul(Vec4.From(mouse))).xyz;
+    mouseWorld = Vec4.FromMat(orthoInverse.mul(Vec4.From(mouse))).xy;
     // boidGroup.boids[0].heading = boidGroup.boids[0].position.to(mouseWorld).normal();
 }
 

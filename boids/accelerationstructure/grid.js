@@ -60,7 +60,7 @@ class Grid {
             [centerIndex[0], centerIndex[1] + quadrantOffsets[1]],
             [centerIndex[0] + quadrantOffsets[0], centerIndex[1]],
         ]
-
+        if(isNaN(centerIndex[0])) console.log(obj);
         indices.forEach(i => this.iterate(i[0], i[1], func));
     }
 

@@ -29,13 +29,32 @@ class WorldBox extends WorldObject{
             new LineSegment(pos.add(new Vec2(-hw, hh)), pos.add(new Vec2(hw, hh))), // top
             new LineSegment(pos.add(new Vec2(-hw, -hh)), pos.add(new Vec2(hw, -hh))), // bottom
         ];
+
+        this.lineVAO = new VertexArrayObject();
+        this.lineBuffer = new LineBuffer();
+        
+        this.lineSegments.forEach(line => this.lineBuffer.addVec(line.origin, line.endPoint));
+        
+        this.lineBuffer.bufferData();
+        this.lineBuffer.vecAttributePointer(this.lineVAO);
     }
 
     rayHit(ray){
-        this.lineSegments.forEach(l => {
-            if(Utils.LineSegmentIntersect(ray, l)) return true;
-        });
+        for(var i = 0; i < this.lineSegments.length; ++i){
+            if(Utils.LineSegmentIntersect(ray, this.lineSegments[i])) return true;
+        }
         return false;
+    }
+
+    render(){
+        if(!window.genericShaderProgram) return;
+
+        genericShaderProgram.use();
+        genericShaderProgram.uniformVec("position", Vec2.ZERO);
+        genericShaderProgram.uniformMat4("transform", Mat4.IDENTITY);
+
+        this.lineVAO.bind();
+        this.lineBuffer.draw();
     }
 }
 
@@ -53,8 +72,6 @@ class WorldWall extends WorldObject{
         this.lineBuffer.addVec(this.p1, this.p2);
         this.lineBuffer.bufferData();
         this.lineBuffer.vecAttributePointer(this.lineVAO);
-
-        console.log(Utils.LineSegmentIntersect(this.lineSegment, new LineSegment(new Vec2(0, 0), new Vec2(0, 1))));
     }
 
     rayHit(ray){
@@ -62,7 +79,7 @@ class WorldWall extends WorldObject{
     }
 
     render(){
-        if(genericShaderProgram === undefined) return;
+        if(!window.genericShaderProgram) return;
 
         genericShaderProgram.use();
         genericShaderProgram.uniformVec("position", Vec2.ZERO);
@@ -84,6 +101,13 @@ class World{
 
     add(obj){
         this.objects.push(obj);
+    }
+
+    hit(ray){
+        for(var i = 0; i < this.objects.length; ++i){
+            if(this.objects[i].rayHit(ray)) return true;
+        }
+        return false;
     }
 
     iterate(func){

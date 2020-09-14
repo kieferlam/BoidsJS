@@ -105,7 +105,7 @@ function handleError(errorCode){
     window.error(errorMsg);
 }
 
-function update(elapsed_time, delta_time){
+window.update = function(elapsed_time, delta_time){
     Boids.update(elapsed_time, delta_time);
 }
 
@@ -132,7 +132,7 @@ function renderToScreen(){
     gl.useProgram(null);
 }
 
-function render(){
+window.render = function(){
     renderContent();
     renderToScreen();
 }

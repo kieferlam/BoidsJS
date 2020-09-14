@@ -104,7 +104,7 @@ class BoidGroup {
         var dot = vec.normal().dot(boid.heading);
 
         // Check if other boid is within radius and vision
-        if (distSq < Boid.VISION_RADIUS && dot > 1 - Boid.VISION_ANGLE) {
+        if (distSq < Boid.VISION_RADIUS_SQ && dot > 1 - Boid.VISION_ANGLE) {
             // Rule 1: avoid other boids in the flock
             boid.avoid(other.position, elapsed_time, delta_time);
 
@@ -175,7 +175,7 @@ class BoidGroup {
         vao.bind();
         gl.drawArraysInstanced(gl.TRIANGLES, 0, triangle.numIndices, this.count);
 
-        this.boids.forEach(b => b.renderHeadingLine());
+        // this.boids.forEach(b => b.renderHeadingLine());
     }
 }
 

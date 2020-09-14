@@ -21,6 +21,10 @@ class VertexBuffer {
         return this.data.length / this.componentSize;
     }
 
+    get length(){
+        return this.data.length;
+    }
+
     asFloat32Array() {
         return Float32Array.from(this.data);
     }
