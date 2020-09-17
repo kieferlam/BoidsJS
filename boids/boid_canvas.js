@@ -5,8 +5,7 @@ import {Vec2} from './geometry/primitive.js';
 import {VertexArrayObject} from './globject/vao.js';
 import * as Boids from './boids.js';
 
-const canvas = document.getElementById('render-canvas');
-window.gl = canvas.getContext("webgl2");
+let canvas;
 
 const pError = document.getElementById("error");
 
@@ -37,6 +36,11 @@ const createScreenRenderProgram = new Promise((resolve, reject) => Promise.all(f
     screenRenderProgram.uniform1i("framebuffer_tex", 0);
     resolve();
 }).catch(err => reject(err)));
+
+function setupBoidCanvas(c){
+    canvas = c;
+    window.gl = canvas.getContext("webgl2");
+}
 
 function resize_canvas(){
     var bounds = canvas.getBoundingClientRect();
@@ -164,7 +168,11 @@ function registerInputHandler(){
     });
 }
 
-// Main
-resize_canvas();
-initGL();
-registerInputHandler();
+function boid_main(){
+    // Main
+    resize_canvas();
+    initGL();
+    registerInputHandler();
+}
+
+export {setupBoidCanvas, boid_main}
