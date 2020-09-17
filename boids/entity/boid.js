@@ -139,16 +139,17 @@ class Boid{
     }
 
     avoid(point, elapsed_time, delta_time){
-        if(this.rotateLock !== 0) return;
+        // if(this.rotateLock !== 0) return;
         var onLeft = point.onLeft(this.position, this.heading);
-        var adjustStrength = 1 - (point.to(this.position).lengthSq / Boid.VISION_RADIUS);
-        adjustStrength = Math.max(0, adjustStrength) * 2;
+        var falloff = point.to(this.position).length / Boid.VISION_RADIUS;
+        var adjustStrength = 1 - falloff*falloff;
+        adjustStrength = Math.max(0, adjustStrength) * 1;
         if(onLeft) this.steerClockwise(adjustStrength);
         else this.steerAntiClockwise(adjustStrength);
     }
 
     steerTowardsFlock(flockVector){
-        if(this.rotateLock !== 0) return;
+        // if(this.rotateLock !== 0) return;
         if(this.heading.dot(flockVector) > 0.99) return;
         var onLeft = flockVector.onLeft(Vec2.ZERO, this.heading);
         var steerStrength = 1.5;
@@ -157,7 +158,7 @@ class Boid{
     }
 
     steerTowardsPoint(point){
-        if(this.rotateLock !== 0) return;
+        // if(this.rotateLock !== 0) return;
         var pointVec = this.position.to(point);
         if(pointVec.lengthSq < (0.00001)) return;
         var onLeft = pointVec.onLeft(Vec2.ZERO, this.heading);
@@ -228,7 +229,7 @@ class Boid{
         }
 
         if(this.rotateLock != 0){
-            this.steerClockwise(this.rotateLock * 2);
+            this.steerClockwise(this.rotateLock * 5);
         }
     }
 
