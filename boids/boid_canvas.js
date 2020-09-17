@@ -23,9 +23,12 @@ window.error = function(errorMsg){
     console.error(`Error: ${errorMsg}`);
 }
 
+// Default globals
+if(!BOIDS_PATH) window.BOIDS_PATH = '.';
+
 const fetchScreenRenderShaders = [
-    fetch('/boids/shaders/screen.vert').then(res => res.text()),
-    fetch('/boids/shaders/screen.frag').then(res => res.text())
+    fetch(`${BOIDS_PATH}/boids/shaders/screen.vert`).then(res => res.text()),
+    fetch(`${BOIDS_PATH}/boids/shaders/screen.frag`).then(res => res.text())
 ];
 const createScreenRenderProgram = new Promise((resolve, reject) => Promise.all(fetchScreenRenderShaders).then(src => {
     screenRenderProgram = new SimpleShaderProgram(src[0], src[1]);

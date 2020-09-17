@@ -9,7 +9,7 @@ import { BoidGroup } from './entity/boidgroup.js';
 import { UniformBufferObject } from './shaders/shaderbuffers.js';
 import { World, WorldBox, WorldWall } from './world/world.js';
 
-const NUM_BOIDS = 100;
+const NUM_BOIDS = 200;
 
 let ortho = new Mat4();
 let orthoInverse = new Mat4();
@@ -21,8 +21,8 @@ window.mouseWorld = new Vec2();
 var boidGroup;
 
 const genericShaderSrc = [
-    fetch('./boids/shaders/generic.vert').then(r => r.text()),
-    fetch('./boids/shaders/generic.frag').then(r => r.text()),
+    fetch(`${BOIDS_PATH}/boids/shaders/generic.vert`).then(r => r.text()),
+    fetch(`${BOIDS_PATH}/boids/shaders/generic.frag`).then(r => r.text()),
 ]
 
 let world;

@@ -29,8 +29,8 @@ var RotateAntiClockwise = (strength) => Mat2.Rotate(-RotateSpeed * strength);
 var RotateClockwise = (strength) => Mat2.Rotate(RotateSpeed * strength);
 
 const loadBoidShaders = [
-    fetch('/boids/shaders/boid.vert').then(res => res.text()),
-    fetch('/boids/shaders/boid.frag').then(res => res.text())
+    fetch(`${BOIDS_PATH}/boids/shaders/boid.vert`).then(res => res.text()),
+    fetch(`${BOIDS_PATH}/boids/shaders/boid.frag`).then(res => res.text())
 ];
 
 var shaderProgram;

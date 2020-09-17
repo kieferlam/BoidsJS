@@ -16,8 +16,8 @@ Util.onceGL(() => {
 });
 
 const loadBoidShaders = [
-    fetch('/boids/shaders/boid_instanced.vert').then(res => res.text()),
-    fetch('/boids/shaders/boid.frag').then(res => res.text())
+    fetch(`${BOIDS_PATH}/boids/shaders/boid_instanced.vert`).then(res => res.text()),
+    fetch(`${BOIDS_PATH}/boids/shaders/boid.frag`).then(res => res.text())
 ];
 
 let shaderProgram;
