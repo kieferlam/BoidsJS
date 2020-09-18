@@ -1,5 +1,5 @@
 import { Boid, _make_triangle } from './boid.js';
-import {Grid} from '../accelerationstructure/grid.js';
+import { Grid } from '../accelerationstructure/grid.js';
 import * as Util from '../util.js';
 import { Vec2, Vec3 } from '../geometry/primitive.js';
 import { SimpleShaderProgram } from '../shaders/shaderprogram.js';
@@ -16,16 +16,14 @@ Util.onceGL(() => {
 });
 
 const loadBoidShaders = [
-    fetch(`${BOIDS_PATH}/boids/shaders/boid_instanced.vert`).then(res => res.text()),
-    fetch(`${BOIDS_PATH}/boids/shaders/boid.frag`).then(res => res.text())
+    Util.waitForGlobals().then(() => Util.read(`${BOIDS_PATH}/boids/shaders/boid_instanced.vert`)).then(res => res.text()),
+    Util.waitForGlobals().then(() => Util.read(`${BOIDS_PATH}/boids/shaders/boid.frag`)).then(res => res.text())
 ];
 
 let shaderProgram;
 let shadersLoaded = false;
 
 // Load shaders
-const asyncCheckGL = () => !window.gl ? Util.ASYNC_CHECK_RETRY : Util.ASYNC_CHECK_RESOLVE;
-const asyncCheckShaders = () => !shaderProgram ? Util.ASYNC_CHECK_RETRY : Util.ASYNC_CHECK_RESOLVE;
 Util.onceGL(() => Promise.all(loadBoidShaders).then(src => {
     shaderProgram = new SimpleShaderProgram(src[0], src[1]);
     shaderProgram.link();
@@ -35,7 +33,7 @@ Util.onceGL(() => Promise.all(loadBoidShaders).then(src => {
     shadersLoaded = true;
 }));
 
-const boidIndexPredicate = function(boid, cellwidth, cellheight){
+const boidIndexPredicate = function (boid, cellwidth, cellheight) {
     return [
         (boid.position.y / cellheight) + 10,
         (boid.position.x / cellwidth) + 10,
@@ -54,8 +52,7 @@ class BoidGroup {
         this.grid = new Grid(0.5, 0.5);
         this.grid.setIndexFunc(boidIndexPredicate);
 
-        Util.onceGL(() => {
-
+        Util.asyncCheck(() => vao ? Util.ASYNC_CHECK_RESOLVE : Util.ASYNC_CHECK_RETRY, -1).then(() => {
             vao.bind();
 
             this.transformBuffer = new VertexBuffer([], 16, gl.DYNAMIC_DRAW);
@@ -88,7 +85,7 @@ class BoidGroup {
     }
 
     spawn(position = new Vec2((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1)) {
-        Util.asyncCheck(Util.asyncNotNull(this.transformBuffer, this.positionBuffer)).then(() => {
+        Util.asyncCheck(Util.asyncNotNull(() => this.transformBuffer, () => this.positionBuffer), -1).then(() => {
             var b = new Boid(position.x, position.y);
             this.transformBuffer.addVec(b.transform);
             this.positionBuffer.addVec(b.position);
@@ -98,7 +95,7 @@ class BoidGroup {
         });
     }
 
-    _interactBoids(boid, other, elapsed_time, delta_time){
+    _interactBoids(boid, other, elapsed_time, delta_time) {
         var vec = boid.position.to(other.position);
         var distSq = vec.lengthSq;
         var dot = vec.normal().dot(boid.heading);
@@ -118,7 +115,7 @@ class BoidGroup {
         }
     }
 
-    _updateBoid(boid, i, elapsed_time, delta_time){
+    _updateBoid(boid, i, elapsed_time, delta_time) {
         boid.update(elapsed_time, delta_time);
 
         // Flock
@@ -161,8 +158,8 @@ class BoidGroup {
         }
     }
 
-    interact(world, elapsed_time, delta_time){
-        for(var i = 0; i < this.count; ++i){
+    interact(world, elapsed_time, delta_time) {
+        for (var i = 0; i < this.count; ++i) {
             this.boids[i].interact(world, elapsed_time, delta_time);
         }
     }

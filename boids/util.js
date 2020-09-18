@@ -10,7 +10,9 @@ const ASYNC_CHECK_RESOLVE = 1;
 const ASYNC_CHECK_RETRY = 2;
 const asyncNotNull = function (...args) {
     return function () {
-        args.forEach(arg => { if (!arg) return ASYNC_CHECK_RETRY; });
+        for(var i = 0; i < args.length; ++i){
+            if(!args[i]()) return ASYNC_CHECK_RETRY;
+        }
         return ASYNC_CHECK_RESOLVE;
     }
 }
@@ -19,7 +21,7 @@ function asyncCheck(func, tries = 5, timeout = 1) {
         const returnval = func();
         switch (returnval) {
             case ASYNC_CHECK_RESOLVE:
-                return resolve();
+                return resolve(false);
             case ASYNC_CHECK_REJECT:
                 return reject(new Error("Function returned reject"));
             default:
@@ -29,7 +31,11 @@ function asyncCheck(func, tries = 5, timeout = 1) {
                 break;
         }
     }
-    return new Promise((resolve, reject) => setTimeout(check, timeout, resolve, reject, func, tries));
+    return new Promise((resolve, reject) => {
+        let returnval = func();
+        if(returnval === ASYNC_CHECK_RESOLVE) return resolve(true);
+        setTimeout(check, timeout, resolve, reject, func, tries);
+    });
 }
 
 function onceGL(func) {
@@ -81,4 +87,22 @@ function LineSegmentIntersect(ray, line){
     return false;
 }
 
-export { ASYNC_CHECK_REJECT, ASYNC_CHECK_RETRY, ASYNC_CHECK_RESOLVE, asyncCheck, onceGL, FLOAT_BYTES, asyncNotNull, genID, LineSegmentIntersect};
+
+let promiseGlobalVars = [
+    asyncCheck(() => {
+        if(!window.BOIDS_PATH) return ASYNC_CHECK_RETRY;
+        return ASYNC_CHECK_RESOLVE;
+    }, -1)
+];
+
+function waitForGlobals(){
+    return Promise.all(promiseGlobalVars);
+}
+
+function read(url){
+    return Promise.all(promiseGlobalVars).then(() => fetch(url));
+}
+
+
+
+export { ASYNC_CHECK_REJECT, ASYNC_CHECK_RETRY, ASYNC_CHECK_RESOLVE, asyncCheck, onceGL, FLOAT_BYTES, asyncNotNull, genID, LineSegmentIntersect, read, waitForGlobals};

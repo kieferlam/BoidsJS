@@ -4,6 +4,7 @@ import {VertexBuffer, QuadBuffer} from './geometry/databuffer.js';
 import {Vec2} from './geometry/primitive.js';
 import {VertexArrayObject} from './globject/vao.js';
 import * as Boids from './boids.js';
+import * as Util from './util.js';
 
 let canvas;
 
@@ -23,12 +24,9 @@ window.error = function(errorMsg){
     console.error(`Error: ${errorMsg}`);
 }
 
-// Default globals
-if(!BOIDS_PATH) window.BOIDS_PATH = '.';
-
 const fetchScreenRenderShaders = [
-    fetch(`${BOIDS_PATH}/boids/shaders/screen.vert`).then(res => res.text()),
-    fetch(`${BOIDS_PATH}/boids/shaders/screen.frag`).then(res => res.text())
+    Util.waitForGlobals().then(()=> Util.read(`${BOIDS_PATH}/boids/shaders/screen.vert`)).then(res => res.text()),
+    Util.waitForGlobals().then(()=> Util.read(`${BOIDS_PATH}/boids/shaders/screen.frag`)).then(res => res.text())
 ];
 const createScreenRenderProgram = new Promise((resolve, reject) => Promise.all(fetchScreenRenderShaders).then(src => {
     screenRenderProgram = new SimpleShaderProgram(src[0], src[1]);

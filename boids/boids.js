@@ -3,13 +3,13 @@ import { Vec2, Vec3, Vec4 } from './geometry/primitive.js';
 import { ShaderProgram, SimpleShaderProgram } from './shaders/shaderprogram.js';
 import { VertexArrayObject } from './globject/vao.js';
 import { Mat2, Mat4, Matrix, Mat3 } from './geometry/matrix.js';
-import * as Utils from './util.js';
+import * as Util from './util.js';
 import { Boid } from './entity/boid.js';
 import { BoidGroup } from './entity/boidgroup.js';
 import { UniformBufferObject } from './shaders/shaderbuffers.js';
 import { World, WorldBox, WorldWall } from './world/world.js';
 
-const NUM_BOIDS = 200;
+const NUM_BOIDS = 100;
 
 let ortho = new Mat4();
 let orthoInverse = new Mat4();
@@ -21,8 +21,8 @@ window.mouseWorld = new Vec2();
 var boidGroup;
 
 const genericShaderSrc = [
-    fetch(`${BOIDS_PATH}/boids/shaders/generic.vert`).then(r => r.text()),
-    fetch(`${BOIDS_PATH}/boids/shaders/generic.frag`).then(r => r.text()),
+    Util.waitForGlobals().then(()=> fetch(`${BOIDS_PATH}/boids/shaders/generic.vert`)).then(r => r.text()),
+    Util.waitForGlobals().then(()=> fetch(`${BOIDS_PATH}/boids/shaders/generic.frag`)).then(r => r.text()),
 ]
 
 let world;
