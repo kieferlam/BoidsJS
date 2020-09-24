@@ -21,7 +21,7 @@ class VertexBuffer {
         return this.data.length / this.componentSize;
     }
 
-    get length(){
+    get length() {
         return this.data.length;
     }
 
@@ -49,6 +49,10 @@ class VertexBuffer {
         this.data = this.data.splice(i, count);
     }
 
+    clear() {
+        this.data = [];
+    }
+
     bufferData() {
         this.bind();
         gl.bufferData(gl.ARRAY_BUFFER, this.asFloat32Array(), this.usage);
@@ -61,9 +65,9 @@ class VertexBuffer {
         gl.bindBuffer(gl.ARRAY_BUFFER, null);
     }
 
-    subData(data, index){
+    subData(data, index) {
         var startIndex = index * this.componentSize;
-        for(var absi = startIndex, i = 0; absi < startIndex + data.length; ++i, ++absi){
+        for (var absi = startIndex, i = 0; absi < startIndex + data.length; ++i, ++absi) {
             this.data[absi] = data[i];
         }
     }

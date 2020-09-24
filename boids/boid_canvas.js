@@ -111,6 +111,7 @@ function handleError(errorCode){
 }
 
 window.update = function(elapsed_time, delta_time){
+    if(!document.hasFocus()) return;
     Boids.update(elapsed_time, delta_time);
 }
 
@@ -138,6 +139,7 @@ function renderToScreen(){
 }
 
 window.render = function(){
+    if(!document.hasFocus()) return;
     renderContent();
     renderToScreen();
 }

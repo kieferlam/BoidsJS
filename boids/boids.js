@@ -21,8 +21,8 @@ window.mouseWorld = new Vec2();
 var boidGroup;
 
 const genericShaderSrc = [
-    Util.waitForGlobals().then(()=> fetch(`${BOIDS_PATH}/boids/shaders/generic.vert`)).then(r => r.text()),
-    Util.waitForGlobals().then(()=> fetch(`${BOIDS_PATH}/boids/shaders/generic.frag`)).then(r => r.text()),
+    Util.waitForGlobals().then(() => fetch(`${BOIDS_PATH}/boids/shaders/generic.vert`)).then(r => r.text()),
+    Util.waitForGlobals().then(() => fetch(`${BOIDS_PATH}/boids/shaders/generic.frag`)).then(r => r.text()),
 ]
 
 let world;

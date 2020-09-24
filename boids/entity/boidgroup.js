@@ -33,11 +33,8 @@ Util.onceGL(() => Promise.all(loadBoidShaders).then(src => {
     shadersLoaded = true;
 }));
 
-const boidIndexPredicate = function (boid, cellwidth, cellheight) {
-    return [
-        (boid.position.y / cellheight) + 10,
-        (boid.position.x / cellwidth) + 10,
-    ];
+const boidPositionGetter = function (boid) {
+    return [boid.position.x, boid.position.y];
 }
 
 class BoidGroup {
@@ -50,7 +47,7 @@ class BoidGroup {
         this.positionBuffer = null;
 
         this.grid = new Grid(0.5, 0.5);
-        this.grid.setIndexFunc(boidIndexPredicate);
+        this.grid.setPositionGetter(boidPositionGetter);
 
         Util.asyncCheck(() => vao ? Util.ASYNC_CHECK_RESOLVE : Util.ASYNC_CHECK_RETRY, -1).then(() => {
             vao.bind();
@@ -84,7 +81,7 @@ class BoidGroup {
         return this.boids.length;
     }
 
-    spawn(position = new Vec2((Math.random() - 0.5) * 2, (Math.random() - 0.5) * 1)) {
+    spawn(position = new Vec2((Math.random() - 0.5) * 4, (Math.random() - 0.5) * 2)) {
         Util.asyncCheck(Util.asyncNotNull(() => this.transformBuffer, () => this.positionBuffer), -1).then(() => {
             var b = new Boid(position.x, position.y);
             this.transformBuffer.addVec(b.transform);
@@ -172,7 +169,12 @@ class BoidGroup {
         vao.bind();
         gl.drawArraysInstanced(gl.TRIANGLES, 0, triangle.numIndices, this.count);
 
-        // this.boids.forEach(b => b.renderHeadingLine());
+        this.boids.forEach(b => {
+            if (b._uid !== 1000) return;
+            b.renderHeadingLine()
+        });
+
+        this.grid.renderGrid();
     }
 }
 

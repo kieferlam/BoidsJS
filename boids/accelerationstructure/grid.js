@@ -1,58 +1,135 @@
-class Grid {
-    constructor(cellWidth, cellHeight, rows = 40, columns = 23) {
-        this.cellWidth = cellWidth;
-        this.cellHeight = cellHeight;
-        this.cells = new Array(rows);
-        for(var i = 0; i < rows; ++i){
-            this.cells[i] = new Array(columns);
-            for(var j = 0; j < columns; ++j) this.cells[i][j] = [];
-        }
+import { Vec2 } from '../geometry/primitive.js';
+
+class GridQuadrant {
+    constructor(rows = 50, columns = 50) {
+        this.rows = rows;
         this.columns = columns;
+        this.cells = new Array(rows);
+        for (var row = 0; row < rows; ++row) {
+            this.cells[row] = new Array(columns);
+            for (var col = 0; col < columns; ++col) {
+                this.cells[row][col] = [];
+            }
+        }
     }
 
-    put(obj){
-        if(!this.indexFunc) return console.log("Invalid indexing function.");
-        var [row, col] = this.getIndex(obj);
-        this.cells[row][col].push(obj);
+    _ensureColumnSize() {
+        for (var i = 0; i < this.rows.length; ++i) {
+            if (!this.cells[i]) this.cells[i] = new Array(this.columns);
+            if (this.cells[i].length < this.columns) {
+                this.cells[i].push(new Array(this.columns));
+                for (var col = 0; col < this.columns; ++col) {
+                    this.cells[i][col] = [];
+                }
+            }
+        }
     }
 
-    get(row, col){
+    _ensureSquare() {
+        this._ensureColumnSize();
+        if (this.cells.length < this.rows) {
+            for (var i = 0; i < this.rows - this.cells.length; ++i) {
+                this.cells.push(new Array(this.columns));
+            }
+        }
+    }
+
+    get(row, col) {
+        if (row >= this.rows || col >= this.cols) throw new Error(`Invalid grid quadrant index. (row: ${row}/${this.row}, col: ${col}/${this.columns})`);
         return this.cells[row][col];
     }
-    
-    setIndexFunc(func){
-        this.indexFunc = func;
+
+    iterate(func) {
+        this.cells.forEach(func);
+    }
+}
+
+class Grid {
+    constructor(cellWidth, cellHeight, rows = 20, columns = 20) {
+        this.cellWidth = cellWidth;
+        this.cellHeight = cellHeight;
+
+        this.pp = new GridQuadrant(rows, columns);
+        this.pn = new GridQuadrant(rows, columns);
+        this.np = new GridQuadrant(rows, columns);
+        this.nn = new GridQuadrant(rows, columns);
+
+        this.objects = [];
+
+        // Debug render
+        this.lineVertices = [];
+        // Add vertical lines
+        for (var i = -cellWidth * columns; i < cellWidth * columns; i += cellWidth) {
+            this.lineVertices.push(new Vec2(i, -1), new Vec2(i, 1));
+        }
+        // Add horizontal lines
+        for (var i = -cellHeight * columns; i < cellHeight * columns; i += cellHeight) {
+            this.lineVertices.push(new Vec2(-4, i), new Vec2(4, i));
+        }
     }
 
-    getIndex(obj){
-        if(!this.indexFunc) return console.log("Invalid indexing function.");
-        var [r, c] = this.indexFunc(obj, this.cellWidth, this.cellHeight);
-        return [Math.trunc(r), Math.trunc(c)];
+    put(obj) {
+        if (!this.posGetter) throw new Error("Invalid position getter.");
+        var [x, y] = this.getIndex(obj);
+        this._getCellFromIndex(x, y).push(obj);
+        this.objects.push({
+            obj: obj,
+            r: y,
+            c: x
+        });
     }
 
-    getQuadrantOffset(obj){
-        if(!this.indexFunc) return [0, 0];
+    get(row, col) {
+        return this._getCellFromIndex(col, row)[row][col];
+    }
+
+    setPositionGetter(func) {
+        this.posGetter = func;
+    }
+
+    _getPosition(obj) {
+        if (!this.posGetter) throw new Error("Invalid position getter.");
+        return this.posGetter(obj);
+    }
+
+    _getQuadrantFromIndex(x, y) {
+        if (x < 0 && y < 0) return this.nn;
+        if (x < 0 && y >= 0) return this.np;
+        if (x >= 0 && y < 0) return this.pn;
+        return this.pp;
+    }
+
+    _getCellFromIndex(x, y) {
+        return this._getQuadrantFromIndex(x, y).get(Math.abs(y), Math.abs(x));
+    }
+
+    getIndex(obj, floor = true) {
+        var [x, y] = this._getPosition(obj);
+        if (floor) return [Math.floor(x / this.cellWidth), Math.floor(y / this.cellHeight)];
+        else return [x / this.cellWidth, y / this.cellHeight];
+    }
+
+    getNeighbourOffsets(obj) {
+        if (!this.posGetter) return [0, 0];
         // Get index from position but without truncation (so value is something like 1.453)
-        var [r, c] = this.indexFunc(obj, this.cellWidth, this.cellHeight);
+        var [x, y] = this.getIndex(obj, false);
         // Decision maker function which will be applied to each dimension
-        var predicate = num => num % 1 >= 0.5 ? 1 : -1;
+        var predicate = num => Math.abs(num % 1) >= 0.5 ? 1 : -1;
+        var isNegativePred = num => num < 0 ? -predicate(num) : predicate(num);
         // If the index func decimal part is < 0.5, offset is -1 else 1
-        return [predicate(r), predicate(c)];
+        return [isNegativePred(x), isNegativePred(y)];
     }
 
-    iterate(row, col, func){
-        if(row < 0 || col < 0) return;
-        if(!this.cells[row]) console.log(row);
-        if(!this.cells[row][col]) console.log(col);
-        this.cells[row][col].forEach(obj => func(obj, row, col));
+    iterate(col, row, func) {
+        this._getCellFromIndex(col, row).forEach(obj => func(obj, row, col));
     }
 
-    iterateNearby(obj, func){
+    iterateNearby(obj, func) {
         var centerIndex = this.getIndex(obj);
 
         // Find which quadrant of the main cell the object is in so we only check the near cells
         // Instead of every adjacent cell
-        var quadrantOffsets = this.getQuadrantOffset(obj);
+        var quadrantOffsets = this.getNeighbourOffsets(obj);
 
         var indices = [
             centerIndex,
@@ -60,40 +137,50 @@ class Grid {
             [centerIndex[0], centerIndex[1] + quadrantOffsets[1]],
             [centerIndex[0] + quadrantOffsets[0], centerIndex[1]],
         ]
-        if(isNaN(centerIndex[0])) console.log(obj);
         indices.forEach(i => this.iterate(i[0], i[1], func));
     }
 
-    update(){
+    update() {
         // Iterate through every cell
         var moveCellTransactions = [];
-        this.cells.forEach((row, rowIndex) => row.forEach((cell, columnIndex) => {
-            // Iterate through objects in cell
-            cell.forEach(obj => {
-                var [r, c] = this.getIndex(obj);
-                if(r < 0 || r < 0) return;
-                if(r !== rowIndex && c !== columnIndex){
-                    moveCellTransactions.push({
-                        obj: obj,
-                        row: r,
-                        col: c,
-                        oldRow: rowIndex,
-                        oldCol: columnIndex
-                    })
-                }
-            });
-        }));
-        
+        this.objects.forEach((obj, i) => {
+            var [c, r] = this.getIndex(obj.obj);
+            if (r !== obj.r || c !== obj.c) {
+                moveCellTransactions.push({
+                    obj: obj.obj,
+                    row: r,
+                    col: c,
+                    oldRow: obj.r,
+                    oldCol: obj.c,
+                    i: i
+                })
+            }
+        })
+
         // Do move cell transaction
         moveCellTransactions.forEach(t => {
-            var index = this.cells[t.oldRow][t.oldCol].findIndex(o => o.equals(t.obj));
-            if(index >= 0){
-                this.cells[t.oldRow][t.oldCol].splice(index, 1);
+            var index = this._getCellFromIndex(t.oldCol, t.oldRow).findIndex(o => o.equals(t.obj));
+            if (index >= 0) {
+                this._getCellFromIndex(t.oldCol, t.oldRow).splice(index, 1);
             }
 
-            this.cells[t.row][t.col].push(t.obj);
+            this._getCellFromIndex(t.col, t.row).push(t.obj);
+
+            this.objects[t.i].r = t.row;
+            this.objects[t.i].c = t.col;
         });
+    }
+
+    renderGrid() {
+        // Use for debug only
+
+        genericShaderProgram.use();
+        genericLineVAO.bind();
+        genericLineBuffer.clear();
+        this.lineVertices.forEach(l => genericLineBuffer.addVec(l));
+        genericLineBuffer.bufferData();
+        genericLineBuffer.draw();
     }
 }
 
-export {Grid};
+export { Grid };
