@@ -35,7 +35,14 @@ class GridQuadrant {
     }
 
     get(row, col) {
-        if (row >= this.rows || col >= this.cols) throw new Error(`Invalid grid quadrant index. (row: ${row}/${this.row}, col: ${col}/${this.columns})`);
+        if (col >= this.columns) {
+            this.columns = col + 1;
+            this._ensureColumnSize();
+        }
+        if (row >= this.rows) {
+            this.rows = row + 1;
+            this._ensureSquare();
+        }
         return this.cells[row][col];
     }
 

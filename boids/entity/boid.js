@@ -150,7 +150,7 @@ class Boid {
         if (onLeft) this.steerClockwise(adjustStrength);
         else this.steerAntiClockwise(adjustStrength);
 
-        if (this._uid === 1000) avoidPoints.push(point);
+        // if (this._uid === 1000) avoidPoints.push(point);
     }
 
     steerTowardsFlock(flockVector) {
@@ -234,7 +234,7 @@ class Boid {
         }
 
         if (this.rotateLock != 0) {
-            this.steerClockwise(this.rotateLock * 5);
+            this.steerClockwise(this.rotateLock * 7);
         }
     }
 
@@ -269,17 +269,17 @@ class Boid {
         // genericLineBuffer.bufferData();
         // genericLineBuffer.draw();
 
-        if (this._uid === 1000) {
-            // Draw lines to avoid points
-            genericShaderProgram.use();
-            genericLineVAO.bind();
-            genericLineBuffer.clear();
-            avoidPoints.forEach(p => genericLineBuffer.addVec(this.position, p));
-            genericLineBuffer.bufferData();
-            genericLineBuffer.draw();
+        // if (this._uid === 1000) {
+        //     // Draw lines to avoid points
+        //     genericShaderProgram.use();
+        //     genericLineVAO.bind();
+        //     genericLineBuffer.clear();
+        //     avoidPoints.forEach(p => genericLineBuffer.addVec(this.position, p));
+        //     genericLineBuffer.bufferData();
+        //     genericLineBuffer.draw();
 
-            avoidPoints = [];
-        }
+        //     avoidPoints = [];
+        // }
     }
 
     equals(other) {

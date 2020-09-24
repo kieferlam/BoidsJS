@@ -97,7 +97,6 @@ function update(elapsed_time, delta_time) {
 function mousemove(mpos) {
     mouse.set(mpos.x, mpos.y);
     mouseWorld = Vec4.FromMat(orthoInverse.mul(Vec4.From(mouse))).xy;
-    // boidGroup.boids[0].heading = boidGroup.boids[0].position.to(mouseWorld).normal();
 }
 
 function render() {

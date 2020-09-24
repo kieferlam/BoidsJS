@@ -169,12 +169,12 @@ class BoidGroup {
         vao.bind();
         gl.drawArraysInstanced(gl.TRIANGLES, 0, triangle.numIndices, this.count);
 
-        this.boids.forEach(b => {
-            if (b._uid !== 1000) return;
-            b.renderHeadingLine()
-        });
+        // this.boids.forEach(b => {
+        //     if (b._uid !== 1000) return;
+        //     b.renderHeadingLine()
+        // });
 
-        this.grid.renderGrid();
+        // this.grid.renderGrid();
     }
 }
 
